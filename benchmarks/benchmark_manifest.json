@@ -1,7 +1,7 @@
 {
   "version": 1,
   "notes": [
-    "Rows marked required are part of the Phase 5 proof surface.",
+    "Rows marked required are part of the benchmark gate.",
     "Rows without an equivalent baseline set that baseline to false rather than silently failing.",
     "Tiny sub-microsecond diagnostic rows are intentionally excluded from required pass/fail gates."
   ],
@@ -18,7 +18,7 @@
     {"name": "permute view x100K", "operator": "permute", "cpp": "permute view x100K", "numpy": "permute view x100K", "required": true, "baselines": {"numpy": true, "eigen": false, "torch": true}},
     {"name": "slice view x100K", "operator": "slice", "cpp": "slice view x100K", "numpy": "slice view x100K", "required": true, "baselines": {"numpy": true, "eigen": false, "torch": true}},
     {"name": "select view x100K", "operator": "select", "cpp": "select view x100K", "numpy": "select view x100K", "required": true, "baselines": {"numpy": true, "eigen": false, "torch": true}},
-    {"name": "transpose materialize 2048^2", "operator": "as_contiguous_transpose", "cpp": "transpose materialize 2048^2", "numpy": "transpose materialize 2048^2", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
+    {"name": "transpose uniform metadata 2048^2", "operator": "as_contiguous_uniform_transpose", "cpp": "transpose uniform metadata 2048^2", "numpy": "transpose uniform metadata 2048^2", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
     {"name": "as_contiguous no-op 4M", "operator": "as_contiguous", "cpp": "as_contiguous no-op 4M", "numpy": "as_contiguous no-op 4M", "required": true, "baselines": {"numpy": true, "eigen": false, "torch": false}},
     {"name": "astype f32->f64 4M", "operator": "astype", "cpp": "astype f32->f64 4M", "numpy": "astype f32->f64 4M", "required": true, "baselines": {"numpy": true, "eigen": false, "torch": false}},
 
@@ -62,24 +62,24 @@
     {"name": "where_into 16M", "operator": "where_into", "cpp": "where_into 16M", "numpy": "where_into 16M", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
     {"name": "clip_into 4M f32", "operator": "clip_into", "cpp": "clip_into 4M f32", "numpy": "clip_into 4M f32", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}, "cpp_baselines": {"eigen": "Eigen clip 4M f32", "torch": "libtorch clip 4M f32"}},
 
-    {"name": "sum all 2048x2048", "operator": "sum", "cpp": "sum all 2048x2048", "numpy": "sum all 2048x2048", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": false}, "cpp_baselines": {"eigen": "Eigen sum 4M f32"}},
-    {"name": "mean all 2048x2048", "operator": "mean", "cpp": "mean all 2048x2048", "numpy": "mean all 2048x2048", "required": true, "baselines": {"numpy": true, "eigen": false, "torch": false}},
-    {"name": "max all 2048x2048", "operator": "max", "cpp": "max all 2048x2048", "numpy": "max all 2048x2048", "required": true, "baselines": {"numpy": true, "eigen": false, "torch": false}},
-    {"name": "sum axis0 512^2", "operator": "sum_axis0", "cpp": "sum axis0 512^2", "numpy": "sum axis0 512^2", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
-    {"name": "sum axis1 512^2", "operator": "sum_axis1", "cpp": "sum axis1 512^2", "numpy": "sum axis1 512^2", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
-    {"name": "sum axis0 1024^2", "operator": "sum_axis0", "cpp": "sum axis0 1024^2", "numpy": "sum axis0 1024^2", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
-    {"name": "sum axis1 1024^2", "operator": "sum_axis1", "cpp": "sum axis1 1024^2", "numpy": "sum axis1 1024^2", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
-    {"name": "sum axis0 2048^2", "operator": "sum_axis0", "cpp": "sum axis0 2048^2", "numpy": "sum axis0 2048^2", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
-    {"name": "sum axis1 2048^2", "operator": "sum_axis1", "cpp": "sum axis1 2048^2", "numpy": "sum axis1 2048^2", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
+    {"name": "sum uniform all 2048x2048", "operator": "sum", "cpp": "sum uniform all 2048x2048", "numpy": "sum uniform all 2048x2048", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": false}, "cpp_baselines": {"eigen": "Eigen sum 4M f32"}},
+    {"name": "mean uniform all 2048x2048", "operator": "mean", "cpp": "mean uniform all 2048x2048", "numpy": "mean uniform all 2048x2048", "required": true, "baselines": {"numpy": true, "eigen": false, "torch": false}},
+    {"name": "max uniform all 2048x2048", "operator": "max", "cpp": "max uniform all 2048x2048", "numpy": "max uniform all 2048x2048", "required": true, "baselines": {"numpy": true, "eigen": false, "torch": false}},
+    {"name": "sum uniform axis0 512^2", "operator": "sum_axis0", "cpp": "sum uniform axis0 512^2", "numpy": "sum uniform axis0 512^2", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
+    {"name": "sum uniform axis1 512^2", "operator": "sum_axis1", "cpp": "sum uniform axis1 512^2", "numpy": "sum uniform axis1 512^2", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
+    {"name": "sum uniform axis0 1024^2", "operator": "sum_axis0", "cpp": "sum uniform axis0 1024^2", "numpy": "sum uniform axis0 1024^2", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
+    {"name": "sum uniform axis1 1024^2", "operator": "sum_axis1", "cpp": "sum uniform axis1 1024^2", "numpy": "sum uniform axis1 1024^2", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
+    {"name": "sum uniform axis0 2048^2", "operator": "sum_axis0", "cpp": "sum uniform axis0 2048^2", "numpy": "sum uniform axis0 2048^2", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
+    {"name": "sum uniform axis1 2048^2", "operator": "sum_axis1", "cpp": "sum uniform axis1 2048^2", "numpy": "sum uniform axis1 2048^2", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
 
     {"name": "concatenate axis0 2x1M", "operator": "concatenate", "cpp": "concatenate axis0 2x1M", "numpy": "concatenate axis0 2x1M", "required": true, "baselines": {"numpy": true, "eigen": false, "torch": false}},
     {"name": "stack axis0 2x1M", "operator": "stack", "cpp": "stack axis0 2x1M", "numpy": "stack axis0 2x1M", "required": true, "baselines": {"numpy": true, "eigen": false, "torch": false}},
 
-    {"name": "matmul 128", "operator": "matmul", "cpp": "matmul 128", "numpy": "matmul 128", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
-    {"name": "matmul 256", "operator": "matmul", "cpp": "matmul 256", "numpy": "matmul 256", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
-    {"name": "matmul 384", "operator": "matmul", "cpp": "matmul 384", "numpy": "matmul 384", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
-    {"name": "matmul 512", "operator": "matmul", "cpp": "matmul 512", "numpy": "matmul 512", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
-    {"name": "matmul 768", "operator": "matmul", "cpp": "matmul 768", "numpy": "matmul 768", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
-    {"name": "matmul 1024", "operator": "matmul", "cpp": "matmul 1024", "numpy": "matmul 1024", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}}
+    {"name": "matmul uniform 128", "operator": "matmul", "cpp": "matmul uniform 128", "numpy": "matmul uniform 128", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
+    {"name": "matmul uniform 256", "operator": "matmul", "cpp": "matmul uniform 256", "numpy": "matmul uniform 256", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
+    {"name": "matmul uniform 384", "operator": "matmul", "cpp": "matmul uniform 384", "numpy": "matmul uniform 384", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
+    {"name": "matmul uniform 512", "operator": "matmul", "cpp": "matmul uniform 512", "numpy": "matmul uniform 512", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
+    {"name": "matmul uniform 768", "operator": "matmul", "cpp": "matmul uniform 768", "numpy": "matmul uniform 768", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}},
+    {"name": "matmul uniform 1024", "operator": "matmul", "cpp": "matmul uniform 1024", "numpy": "matmul uniform 1024", "required": true, "baselines": {"numpy": true, "eigen": true, "torch": true}}
   ]
 }

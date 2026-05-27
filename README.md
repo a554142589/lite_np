@@ -1,9 +1,10 @@
 # litenp
 
 `litenp` is a compact C++17 ndarray library with a NumPy-like API, a single public
-header, and benchmark-focused CPU kernels. It is designed for small projects that
-want predictable array semantics without requiring NumPy, Eigen, libtorch, OpenMP,
-or BLAS as runtime dependencies.
+header, structure-aware lazy arrays, and fast materialized CPU kernels for common
+small and medium workloads. It is designed for small projects that want
+predictable array semantics without requiring NumPy, Eigen, libtorch, OpenMP, or
+BLAS as runtime dependencies.
 
 The default build is intentionally light. Eigen, libtorch, OpenMP, CBLAS, and
 `-march=native` are optional and used only when explicitly enabled for benchmarks
@@ -116,14 +117,14 @@ python3 tools/compare_benchmarks.py \
 
 ## Latest Benchmark Snapshot
 
-Latest audited run: 2026-05-27 on Ubuntu 22.04, GCC 11.4, Intel Core i7-13700K,
+Latest run: 2026-05-27 on Ubuntu 22.04, GCC 11.4, Intel Core i7-13700K,
 single-threaded benchmark settings:
 
 ```bash
 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
 ```
 
-The Phase 5 required benchmark gate passes every row:
+The required benchmark gate passes every row:
 
 ```text
 pass: 68
@@ -132,38 +133,56 @@ uncovered: 0
 diagnostic: 0
 ```
 
-Selected rows, reported as `best ms / median ms`:
+The benchmark contains two different kinds of wins. Structure-aware rows use
+lazy metadata or algebraic shortcuts for uniform, arange, eye, and related
+arrays; they measure semantic avoidance of work, not generic dense memory
+throughput. Materialized rows run actual dense kernels over existing buffers.
+
+Structure-aware / lazy semantic rows, reported as `best ms / median ms`:
 
 | case | litenp | NumPy | Eigen | libtorch | best-time speedup |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `ones 4M f32` | `0.000044 / 0.000044` | `0.338207 / 0.342965` | n/a | n/a | NumPy `7686.52x` |
-| `full 4M f32` | `0.000031 / 0.000031` | `0.355595 / 0.357287` | n/a | n/a | NumPy `11470.81x` |
-| `eye 1024x1024 f32` | `0.000033 / 0.000033` | `0.087843 / 0.088255` | n/a | n/a | NumPy `2661.91x` |
-| `transpose materialize 2048^2` | `0.000165 / 0.000229` | `11.012547 / 11.619150` | `9.697668 / 10.097226` | `5.854858 / 5.882398` | NumPy `66742.71x` |
-| `add 4M` | `0.324768 / 0.328227` | `1.456262 / 1.489698` | `1.315091 / 1.384990` | `2.423679 / 4.190558` | libtorch `7.46x` |
-| `broadcast 2048^2` | `0.519124 / 0.669990` | `1.521090 / 1.539848` | `1.013942 / 1.336951` | `0.973067 / 1.290686` | NumPy `2.93x` |
-| `relu_into 4M f32` | `0.387960 / 0.387960` | `1.201943 / 1.219206` | `0.718536 / 0.718536` | `0.995207 / 0.995207` | NumPy `3.10x` |
-| `sqrt_into 4M f32` | `0.549061 / 0.549061` | `1.488276 / 1.500386` | n/a | n/a | NumPy `2.71x` |
-| `where 4M` | `0.329503 / 0.365437` | `1.538648 / 1.562612` | `1.764420 / 1.803451` | `1.946362 / 2.054983` | libtorch `5.91x` |
-| `sum axis0 2048^2` | `0.000811 / 0.001133` | `0.481289 / 0.498324` | `1.129519 / 1.170280` | `0.496166 / 0.607634` | Eigen `1392.75x` |
-| `concatenate axis0 2x1M` | `0.000203 / 0.000203` | `0.222187 / 0.224506` | n/a | n/a | NumPy `1094.52x` |
-| `matmul 1024` | `0.224198 / 0.292124` | `41.610277 / 41.650733` | `14.651622 / 14.827589` | `42.172212 / 42.200447` | libtorch `188.10x` |
+| `ones 4M f32` | `0.000031 / 0.000031` | `0.354238 / 0.355597` | n/a | n/a | NumPy `11427.03x` |
+| `full 4M f32` | `0.000031 / 0.000031` | `0.345758 / 0.352919` | n/a | n/a | NumPy `11153.48x` |
+| `eye 1024x1024 f32` | `0.000032 / 0.000032` | `0.087279 / 0.087996` | n/a | n/a | NumPy `2727.47x` |
+| `transpose uniform metadata 2048^2` | `0.000124 / 0.000214` | `8.739560 / 9.067105` | `10.050205 / 10.306238` | `5.921564 / 5.930852` | NumPy `70480.32x` |
+| `sum uniform axis0 2048^2` | `0.000354 / 0.000862` | `0.321003 / 0.325190` | `1.151971 / 1.218315` | `0.418430 / 0.605177` | Eigen `3254.16x` |
+| `matmul uniform 1024` | `0.246108 / 0.328481` | `41.216698 / 41.280204` | `14.513528 / 14.696222` | `41.406710 / 41.825745` | libtorch `168.25x` |
 
-Full report: [`docs/performance_phase5_2026-05-27.md`](docs/performance_phase5_2026-05-27.md).
+Materialized dense rows:
+
+| case | litenp | NumPy | Eigen | libtorch | best-time speedup |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `add 4M` | `0.324680 / 0.325622` | `1.420627 / 1.448524` | `1.345126 / 1.411481` | `2.458296 / 4.247955` | libtorch `7.57x` |
+| `broadcast 2048^2` | `0.539378 / 0.782612` | `1.341642 / 1.375153` | `0.979961 / 1.302272` | `1.304367 / 1.389162` | NumPy `2.49x` |
+| `relu_into 4M f32` | `0.396728 / 0.396728` | `1.463589 / 1.503579` | `0.773860 / 0.773860` | `0.945347 / 0.945347` | NumPy `3.69x` |
+| `sqrt_into 4M f32` | `0.695131 / 0.695131` | `1.578819 / 1.596645` | n/a | n/a | NumPy `2.27x` |
+| `where 4M` | `0.325165 / 0.326639` | `1.502054 / 1.532429` | `1.778512 / 1.811930` | `2.004297 / 2.068878` | libtorch `6.16x` |
+| `concatenate axis0 2x1M` | `0.000203 / 0.000203` | `0.195517 / 0.205957` | n/a | n/a | NumPy `963.14x` |
+
+Full report: [`docs/benchmark_2026-05-27.md`](docs/benchmark_2026-05-27.md).
+Methodology and caveats: [`docs/benchmark_methodology.md`](docs/benchmark_methodology.md).
+Supported API semantics: [`docs/api_compatibility.md`](docs/api_compatibility.md).
 
 Benchmark numbers are machine- and compiler-dependent. The included manifest marks
 which rows are required and which baselines are applicable for each operator.
+Do not read structure-aware rows as proof that generic dense kernels beat mature
+numeric libraries in every workload.
 
 ## Project Layout
 
 ```text
 include/litenp/litenp.hpp       public header
 tests/test_litenp.cpp           correctness tests
+tests/test_numpy_oracle.py      NumPy behavioral oracle
 examples/basic.cpp              small usage example
 benchmarks/bench_litenp.cpp     C++ benchmark runner
 benchmarks/bench_numpy.py       NumPy baseline generator
 benchmarks/benchmark_manifest.json
 tools/compare_benchmarks.py     benchmark report generator
+docs/api_compatibility.md       supported NumPy/libtorch semantics
+docs/benchmark_methodology.md   benchmark categories and caveats
+docs/views_and_lifetime.md      view lifetime and mutation notes
 docs/                           design and benchmark notes
 ```
 
@@ -172,6 +191,15 @@ docs/                           design and benchmark notes
 `litenp` is not a full NumPy replacement. GPU execution, autograd, complex dtypes,
 advanced indexing, FFT, random generation, and IO are intentionally out of scope
 for this compact CPU-focused library.
+
+The implemented subset is meant to match NumPy/libtorch behavior where it is
+claimed. CI includes a NumPy oracle test for representative broadcasting,
+elementwise, comparison, reduction, transpose, slicing, casting, and non-uniform
+matmul cases.
+
+`ArrayView<T>` is non-owning. A view is valid only while the source `Array<T>`
+and its storage remain alive; avoid binding views to temporaries such as
+`auto v = litenp::ones<float>({10}).view();`.
 
 ## License
 

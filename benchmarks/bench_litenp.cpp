@@ -513,7 +513,7 @@ void bench_view_compare_matrix() {
         torch_material_out = torch_material.transpose(0, 1).contiguous();
     }, 3);
 #endif
-    print_matrix_result("transpose materialize 2048^2", transpose_copy_ms, eigen_transpose_copy_ms, torch_transpose_copy_ms, checksum_array(material_out));
+    print_matrix_result("transpose uniform metadata 2048^2", transpose_copy_ms, eigen_transpose_copy_ms, torch_transpose_copy_ms, checksum_array(material_out));
 }
 
 void bench_copy_cast() {
@@ -700,14 +700,14 @@ void bench_reduce() {
     litenp::Array<float> out_f;
     litenp::Array<double> out_d;
 
-    print_timed("sum all 2048x2048", [&] { scalar = litenp::sum(a); }, [&] { return scalar; });
+    print_timed("sum uniform all 2048x2048", [&] { scalar = litenp::sum(a); }, [&] { return scalar; });
     print_timed("sum view all 2048x2048", [&] { scalar = litenp::sum<float>(a.view()); }, [&] { return scalar; });
-    print_timed("mean all 2048x2048", [&] { mean_scalar = litenp::mean(a); }, [&] { return mean_scalar; });
+    print_timed("mean uniform all 2048x2048", [&] { mean_scalar = litenp::mean(a); }, [&] { return mean_scalar; });
     print_timed("mean view all 2048x2048", [&] { mean_scalar = litenp::mean<float>(a.view()); }, [&] { return mean_scalar; });
-    print_timed("max all 2048x2048", [&] { scalar = litenp::max(a); }, [&] { return scalar; });
+    print_timed("max uniform all 2048x2048", [&] { scalar = litenp::max(a); }, [&] { return scalar; });
     print_timed("max view all 2048x2048", [&] { scalar = litenp::max<float>(a.view()); }, [&] { return scalar; });
-    print_timed("sum axis0 2048x2048", [&] { out_f = litenp::sum(a, 0); }, [&] { return checksum_array(out_f); });
-    print_timed("sum axis1 2048x2048", [&] { out_f = litenp::sum(a, 1); }, [&] { return checksum_array(out_f); });
+    print_timed("sum uniform axis0 2048x2048", [&] { out_f = litenp::sum(a, 0); }, [&] { return checksum_array(out_f); });
+    print_timed("sum uniform axis1 2048x2048", [&] { out_f = litenp::sum(a, 1); }, [&] { return checksum_array(out_f); });
     print_timed("mean axis0 2048x2048", [&] { out_d = litenp::mean(a, 0); }, [&] { return checksum_array(out_d); });
     print_timed("mean axis1 2048x2048", [&] { out_d = litenp::mean(a, 1); }, [&] { return checksum_array(out_d); });
     print_timed("max axis0 2048x2048", [&] { out_f = litenp::max(a, 0); }, [&] { return checksum_array(out_f); });
@@ -758,14 +758,14 @@ void bench_matmul() {
     Eigen::MatrixXf ea = Eigen::MatrixXf::Constant(static_cast<Eigen::Index>(m), static_cast<Eigen::Index>(k), 1.0f);
     Eigen::MatrixXf eb = Eigen::MatrixXf::Constant(static_cast<Eigen::Index>(k), static_cast<Eigen::Index>(n), 0.5f);
     Eigen::MatrixXf ec(static_cast<Eigen::Index>(m), static_cast<Eigen::Index>(n));
-    print_timed("Eigen matmul 384^3", [&] { ec.noalias() = ea * eb; }, [&] { return ec(0, 0) + ec(static_cast<Eigen::Index>(m - 1), static_cast<Eigen::Index>(n - 1)); }, 3);
+    print_timed("Eigen matmul uniform 384^3", [&] { ec.noalias() = ea * eb; }, [&] { return ec(0, 0) + ec(static_cast<Eigen::Index>(m - 1), static_cast<Eigen::Index>(n - 1)); }, 3);
 #endif
 
 #if defined(LITENP_HAS_TORCH)
     auto ta = torch::full({static_cast<long long>(m), static_cast<long long>(k)}, 1.0f, torch::kFloat32);
     auto tb = torch::full({static_cast<long long>(k), static_cast<long long>(n)}, 0.5f, torch::kFloat32);
     torch::Tensor tc;
-    print_timed("libtorch matmul 384^3", [&] { tc = torch::matmul(ta, tb); }, [&] { return tc[0][0].item<float>() + tc[-1][-1].item<float>(); }, 3);
+    print_timed("libtorch matmul uniform 384^3", [&] { tc = torch::matmul(ta, tb); }, [&] { return tc[0][0].item<float>() + tc[-1][-1].item<float>(); }, 3);
 #endif
 }
 
@@ -883,7 +883,7 @@ void bench_scale_matrix_2d() {
 #if defined(LITENP_HAS_TORCH)
         torch_axis0_ms = time_stats([&] { tout = tmatrix.sum(0); }, repeats);
 #endif
-        print_matrix_result("sum axis0 " + std::to_string(side) + "^2", axis0_ms, eigen_axis0_ms, torch_axis0_ms, checksum_array(out));
+        print_matrix_result("sum uniform axis0 " + std::to_string(side) + "^2", axis0_ms, eigen_axis0_ms, torch_axis0_ms, checksum_array(out));
 
         const TimingStats axis1_ms = time_stats([&] { out = litenp::sum<float>(matrix.view(), 1); }, repeats);
         TimingStats eigen_axis1_ms;
@@ -895,7 +895,7 @@ void bench_scale_matrix_2d() {
 #if defined(LITENP_HAS_TORCH)
         torch_axis1_ms = time_stats([&] { tout = tmatrix.sum(1); }, repeats);
 #endif
-        print_matrix_result("sum axis1 " + std::to_string(side) + "^2", axis1_ms, eigen_axis1_ms, torch_axis1_ms, checksum_array(out));
+        print_matrix_result("sum uniform axis1 " + std::to_string(side) + "^2", axis1_ms, eigen_axis1_ms, torch_axis1_ms, checksum_array(out));
         g_sink += static_cast<double>(n);
     }
 }
@@ -1040,7 +1040,7 @@ void bench_gemm_path_diagnostics() {
 }
 
 void bench_scale_matrix_matmul() {
-    print_matrix_header("scale matrix / matmul");
+    print_matrix_header("scale matrix / uniform matmul");
     const std::vector<std::size_t> sizes = {64, 128, 256, 384, 512, 768, 1024};
 
     for (std::size_t side : sizes) {
@@ -1064,7 +1064,7 @@ void bench_scale_matrix_matmul() {
         torch::Tensor tc;
         torch_ms = time_stats([&] { tc = torch::matmul(ta, tb); }, repeats);
 #endif
-        print_matrix_result("matmul " + std::to_string(side), litenp_ms, eigen_ms, torch_ms, checksum_array(c));
+        print_matrix_result("matmul uniform " + std::to_string(side), litenp_ms, eigen_ms, torch_ms, checksum_array(c));
     }
 }
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""NumPy side of the litenp Phase 5 benchmark matrix."""
+"""NumPy side of the litenp benchmark matrix."""
 
 from __future__ import annotations
 
@@ -75,7 +75,7 @@ def main() -> None:
     add_row(rows, "select view x100K", lambda: run_loop(lambda: matrix[8, :], 100000), repeats=3)
 
     material = np.full((2048, 2048), 1.0, dtype=np.float32)
-    add_row(rows, "transpose materialize 2048^2", lambda: np.ascontiguousarray(material.T), repeats=3)
+    add_row(rows, "transpose uniform metadata 2048^2", lambda: np.ascontiguousarray(material.T), repeats=3)
     base4m = np.arange(n4m, dtype=np.float32)
     add_row(rows, "as_contiguous no-op 4M", lambda: np.array(base4m, copy=True, order="C"), repeats=5)
     add_row(rows, "astype f32->f64 4M", lambda: base4m.astype(np.float64), repeats=5)
@@ -130,13 +130,13 @@ def main() -> None:
         out2 = np.empty_like(matrix)
         add_row(rows, f"broadcast {side}^2", lambda m=matrix, r=row: m + r, repeats=repeats)
         add_row(rows, f"broadcast_into {side}^2", lambda m=matrix, r=row, out=out2: np.add(m, r, out=out), repeats=repeats)
-        add_row(rows, f"sum axis0 {side}^2", lambda m=matrix: m.sum(axis=0), repeats=repeats)
-        add_row(rows, f"sum axis1 {side}^2", lambda m=matrix: m.sum(axis=1), repeats=repeats)
+        add_row(rows, f"sum uniform axis0 {side}^2", lambda m=matrix: m.sum(axis=0), repeats=repeats)
+        add_row(rows, f"sum uniform axis1 {side}^2", lambda m=matrix: m.sum(axis=1), repeats=repeats)
 
     reduce_matrix = np.full((2048, 2048), 1.0, dtype=np.float32)
-    add_row(rows, "sum all 2048x2048", lambda: reduce_matrix.sum())
-    add_row(rows, "mean all 2048x2048", lambda: reduce_matrix.mean())
-    add_row(rows, "max all 2048x2048", lambda: reduce_matrix.max())
+    add_row(rows, "sum uniform all 2048x2048", lambda: reduce_matrix.sum())
+    add_row(rows, "mean uniform all 2048x2048", lambda: reduce_matrix.mean())
+    add_row(rows, "max uniform all 2048x2048", lambda: reduce_matrix.max())
 
     ca = np.full((1024, 1024), 1.0, dtype=np.float32)
     cb = np.full((1024, 1024), 2.0, dtype=np.float32)
@@ -148,7 +148,7 @@ def main() -> None:
         ma = np.full((side, side), 1.0, dtype=np.float32)
         mb = np.full((side, side), 0.5, dtype=np.float32)
         mout = np.empty((side, side), dtype=np.float32)
-        add_row(rows, f"matmul {side}", lambda a=ma, b=mb, out=mout: np.matmul(a, b, out=out), repeats=repeats)
+        add_row(rows, f"matmul uniform {side}", lambda a=ma, b=mb, out=mout: np.matmul(a, b, out=out), repeats=repeats)
 
     print(json.dumps({
         "metadata": {

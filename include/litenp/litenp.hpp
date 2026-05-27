@@ -3665,6 +3665,9 @@ inline bool gemm_work_le(std::size_t m, std::size_t k, std::size_t n, std::size_
 
 template <typename T>
 inline GemmBackend select_gemm_backend(std::size_t m, std::size_t k, std::size_t n) {
+    (void)m;
+    (void)k;
+    (void)n;
 #if defined(__AVX2__) && defined(__FMA__)
     if constexpr (std::is_same<T, float>::value) {
         if (n % 16 == 0 && m >= 768 && k >= 768 && n >= 768 && gemm_work_le(m, k, n, 1024u * 1024u * 1024u)) {
@@ -6152,6 +6155,7 @@ void matmul_into(ArrayView<const T> a, ArrayView<const T> b, ArrayView<T> out) {
         }
 
         const auto backend = detail::select_gemm_backend<T>(m, k, n);
+        (void)backend;
 #if defined(LITENP_HAS_CBLAS)
         if (backend == detail::GemmBackend::cblas) {
             if constexpr (std::is_same<T, float>::value) {

@@ -7,14 +7,101 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++, clang++]
+        build_type: [Release, Debug]
     steps:
       - uses: actions/checkout@v4
 
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        env:
+          CXX: ${{ matrix.compiler }}
 
       - name: Build
         run: cmake --build build -j2
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+  sanitizer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure ASan UBSan
+        run: cmake -S . -B build-sanitize -DCMAKE_BUILD_TYPE=Debug
+        env:
+          CXX: clang++
+          CXXFLAGS: -fsanitize=address,undefined -fno-omit-frame-pointer
+          LDFLAGS: -fsanitize=address,undefined
+
+      - name: Build ASan UBSan
+        run: cmake --build build-sanitize -j2
+
+      - name: Test ASan UBSan
+        run: ctest --test-dir build-sanitize --output-on-failure
+        env:
+          ASAN_OPTIONS: detect_leaks=1:verify_asan_link_order=0
+          UBSAN_OPTIONS: print_stacktrace=1
+
+  numpy-oracle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install NumPy
+        run: python3 -m pip install --upgrade pip numpy
+
+      - name: Run NumPy Oracle
+        run: python3 tests/test_numpy_oracle.py
+        env:
+          CXX: g++
+
+  benchmark-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure Benchmark Target
+        run: cmake -S . -B build-bench -DCMAKE_BUILD_TYPE=Release -DLITENP_BUILD_BENCHMARKS=ON
+
+      - name: Build Benchmark Target
+        run: cmake --build build-bench --target litenp_bench -j2
+
+  install-consume:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Package
+        run: |
+          cmake -S . -B build-install -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-install -j2
+          cmake --install build-install --prefix "$RUNNER_TEMP/litenp-install"
+
+      - name: Consume Installed Package
+        run: |
+          mkdir -p "$RUNNER_TEMP/litenp-consume"
+          cat > "$RUNNER_TEMP/litenp-consume/CMakeLists.txt" <<'CMAKE'
+          cmake_minimum_required(VERSION 3.16)
+          project(litenp_consume LANGUAGES CXX)
+          find_package(litenp CONFIG REQUIRED)
+          add_executable(consume main.cpp)
+          target_link_libraries(consume PRIVATE litenp::litenp)
+          CMAKE
+          cat > "$RUNNER_TEMP/litenp-consume/main.cpp" <<'CPP'
+          #include "litenp/litenp.hpp"
+          int main() {
+              auto a = litenp::Array<float>::from_vector({2, 2}, {1.0f, 2.0f, 3.0f, 4.0f});
+              auto b = litenp::ones<float>({2, 2});
+              auto c = a + b;
+              return c({1, 1}) == 5.0f ? 0 : 1;
+          }
+          CPP
+          cmake -S "$RUNNER_TEMP/litenp-consume" -B "$RUNNER_TEMP/litenp-consume/build" \
+            -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/litenp-install"
+          cmake --build "$RUNNER_TEMP/litenp-consume/build" -j2
+          "$RUNNER_TEMP/litenp-consume/build/consume"
