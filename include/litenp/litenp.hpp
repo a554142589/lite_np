@@ -3793,7 +3793,8 @@ public:
     ArrayView<T> reshape(Shape new_shape) const {
         detail::require(is_contiguous(), "reshape currently requires a contiguous view");
         detail::require(numel(new_shape) == size(), "reshape cannot change element count");
-        return ArrayView<T>(data_, std::move(new_shape), detail::contiguous_strides(new_shape), base_data_);
+        auto new_strides = detail::contiguous_strides(new_shape);
+        return ArrayView<T>(data_, std::move(new_shape), std::move(new_strides), base_data_);
     }
 
     ArrayView<T> flatten() const {
