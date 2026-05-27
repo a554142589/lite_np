@@ -1,3 +1,7 @@
+<p align="right">
+English | <a href="README.zh-CN.md">简体中文</a>
+</p>
+
 # litenp
 
 `litenp` is a compact C++17 ndarray library with a NumPy-like API, a single public
