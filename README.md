@@ -172,3 +172,8 @@ docs/                           design and benchmark notes
 `litenp` is not a full NumPy replacement. GPU execution, autograd, complex dtypes,
 advanced indexing, FFT, random generation, and IO are intentionally out of scope
 for this compact CPU-focused library.
+
+## License
+
+`litenp` is licensed under the Apache License, Version 2.0. See
+[`LICENSE`](LICENSE) for details.
